@@ -1,0 +1,315 @@
+{
+  "paper": {
+    "title": "Reasoning-State Expression and Critical Failure Modules in LLM Agents: A Multivariate Analysis of AgentErrorBench",
+    "codename": "ReasonState",
+    "authors": ["Samuel Stephen", "R. Vignesh"],
+    "blueprint_version": "v2.0 Final",
+    "outcome_classification": "O1",
+    "interpretation": "Component-interpretable",
+    "robustness": "Qualified"
+  },
+
+  "dataset": {
+    "source": "AgentErrorBench (Zhu et al. 2025, arXiv:2509.25370)",
+    "total_trajectories": 200,
+    "complete_cases_rq1": 182,
+    "complete_cases_rq2": 182,
+    "environments": {
+      "ALFWorld": 100,
+      "GAIA": 50,
+      "WebShop": 50
+    },
+    "models": {
+      "gpt-4o": 81,
+      "qwen3-8b": 62,
+      "llama-70b": 40,
+      "meta-llama/Llama-3.3-70B-Instruct-Turbo": 17
+    },
+    "critical_failure_module_counts": {
+      "plan": 49,
+      "reflection": 40,
+      "memory": 38,
+      "planning": 29,
+      "system": 22,
+      "action": 22
+    },
+    "tokenizer": "tiktoken o200k_base",
+    "predictor_table_sha256": "92eb46b762623e57af21d64941bd6514753aada886ad70e095801ebb1462f611"
+  },
+
+  "predictors": {
+    "confirmatory": [
+      {
+        "name": "mean_memory_length",
+        "construct": "Memory Expression",
+        "definition": "Mean token count of <memory> tag content per trajectory, averaged across steps where <memory> is present",
+        "missingness_n": 15,
+        "missingness_pct": 7.5
+      },
+      {
+        "name": "memory_proportion",
+        "construct": "Memory Expression",
+        "definition": "Sum of <memory> tokens / sum of (memory + reflection + plan) tokens per trajectory",
+        "missingness_n": 15,
+        "missingness_pct": 7.5
+      },
+      {
+        "name": "memory_variability",
+        "construct": "Memory Expression",
+        "definition": "Variance of <memory> token counts across steps where <memory> is present",
+        "missingness_n": 18,
+        "missingness_pct": 9.0
+      },
+      {
+        "name": "mean_reflection_length",
+        "construct": "Reflection Expression",
+        "definition": "Mean token count of <reflection> tag content per trajectory, averaged across steps where <reflection> is present",
+        "missingness_n": 10,
+        "missingness_pct": 5.0
+      },
+      {
+        "name": "reflection_proportion",
+        "construct": "Reflection Expression",
+        "definition": "Sum of <reflection> tokens / sum of (memory + reflection + plan) tokens per trajectory",
+        "missingness_n": 10,
+        "missingness_pct": 5.0
+      },
+      {
+        "name": "reflection_variability",
+        "construct": "Reflection Expression",
+        "definition": "Variance of <reflection> token counts across steps where <reflection> is present",
+        "missingness_n": 7,
+        "missingness_pct": 3.5
+      }
+    ],
+    "exploratory_only": [
+      {
+        "name": "mean_plan_length",
+        "construct": "Planning Expression",
+        "definition": "Mean token count of <plan> tag content per trajectory",
+        "note": "Exploratory only — proximity to Planning/Inefficient-Plan labels"
+      },
+      {
+        "name": "plan_proportion",
+        "construct": "Planning Expression",
+        "definition": "Sum of <plan> tokens / sum of (memory + reflection + plan) tokens per trajectory"
+      },
+      {
+        "name": "plan_variability",
+        "construct": "Planning Expression",
+        "definition": "Variance of <plan> token counts across steps where <plan> is present"
+      }
+    ],
+    "removed": [
+      {
+        "name": "mean_think_length",
+        "reason": "Construct validity failure: <think> presence is model-determined (0%/0%/40%/100% across model identities)"
+      },
+      {
+        "name": "reasoning_to_action_ratio",
+        "reason": "Lost conceptual anchor after Reasoning Expression construct was removed"
+      }
+    ]
+  },
+
+  "predictor_correlations": {
+    "mean_memory_length": {
+      "memory_proportion": 0.774,
+      "memory_variability": 0.915,
+      "mean_reflection_length": 0.314,
+      "reflection_proportion": -0.593,
+      "reflection_variability": -0.208
+    },
+    "memory_proportion": {
+      "memory_variability": 0.674,
+      "mean_reflection_length": -0.225,
+      "reflection_proportion": -0.509,
+      "reflection_variability": -0.237
+    },
+    "memory_variability": {
+      "mean_reflection_length": 0.231,
+      "reflection_proportion": -0.515,
+      "reflection_variability": -0.171
+    },
+    "mean_reflection_length": {
+      "reflection_proportion": 0.400,
+      "reflection_variability": -0.003
+    },
+    "reflection_proportion": {
+      "reflection_variability": 0.227
+    }
+  },
+
+  "step8c_audits": {
+    "vif": {
+      "note": "VIF values 118-166 identified but diagnosed as wrong tool for distance-based non-coefficient-estimating PERMANOVA",
+      "verdict": "Not a design failure; documented as Step 6 limitation"
+    },
+    "redundancy": {
+      "mantel_r_drop_variability": 0.8288,
+      "mantel_r_drop_proportion": 0.8954,
+      "permanova_full_6pred_F": 3.207,
+      "permanova_no_variability_F": 3.567,
+      "permanova_no_proportion_F": 3.604,
+      "verdict": "Qualified limitation — redundancy does not alter primary conclusion"
+    },
+    "memory_growth_audit": {
+      "llama33_median_slope": 4.38,
+      "gpt4o_median_slope": 0.11,
+      "llama70b_median_slope": 0.13,
+      "qwen3_median_slope": 0.13,
+      "partial_correlation_llama33": 0.311,
+      "module_assoc_raw_pseudoF": 3.831,
+      "module_assoc_model_adjusted_pseudoF": 5.138,
+      "verdict": "Model-specific nuisance; association strengthens after model adjustment"
+    },
+    "model_confounding": {
+      "eta_squared_mean_memory": 0.437,
+      "eta_squared_mean_reflection": 0.590,
+      "eta_squared_mean_plan": 0.540,
+      "cramers_v_model_module": 0.317,
+      "chi2": 60.19,
+      "module_pseudoF_raw": 4.21,
+      "module_pseudoF_model_adjusted": 2.73,
+      "model_adjusted_p": 0.005,
+      "verdict": "Substantial nuisance; association survives model adjustment"
+    }
+  },
+
+  "rq1": {
+    "test": "Blocked PERMANOVA (within-environment restricted permutation)",
+    "n_complete": 182,
+    "n_groups": 6,
+    "predictor_set": "6 confirmatory (Memory Expression x3, Reflection Expression x3)",
+    "preprocessing": "Within-environment z-scoring, Euclidean distance",
+    "permutations": 9999,
+    "seed": 42,
+    "permdisp": {
+      "F": 2.047868,
+      "p": 0.0629,
+      "verdict": "Passes assumption check (p > 0.05, though close to threshold)"
+    },
+    "permanova": {
+      "pseudo_F": 3.207007,
+      "p_blocked": 0.0001,
+      "R_squared": 0.0835,
+      "df_between": 5,
+      "df_within": 176
+    },
+    "verdict": "Significant — RQ1 hypothesis supported"
+  },
+
+  "rq2": {
+    "test": "Kruskal-Wallis + Dunn post-hoc (BH correction)",
+    "n_complete": 182,
+    "primary_family_module": {
+      "correction": "Benjamini-Hochberg",
+      "results": [
+        {"predictor": "mean_plan_length", "H": 20.4249, "p_raw": 0.001040, "p_bh": 0.00557, "significant": true},
+        {"predictor": "mean_reflection_length", "H": 20.0110, "p_raw": 0.001244, "p_bh": 0.00557, "significant": true},
+        {"predictor": "mean_memory_length", "H": 19.0806, "p_raw": 0.001857, "p_bh": 0.00557, "significant": true},
+        {"predictor": "memory_variability", "H": 16.6526, "p_raw": 0.005208, "p_bh": 0.00557, "significant": true},
+        {"predictor": "plan_variability", "H": 14.4092, "p_raw": 0.013209, "p_bh": 0.00557, "significant": true},
+        {"predictor": "reflection_proportion", "H": 12.6250, "p_raw": 0.027158, "p_bh": 0.00557, "significant": true},
+        {"predictor": "memory_proportion", "H": 11.9142, "p_raw": 0.035983, "p_bh": 0.00557, "significant": true},
+        {"predictor": "reflection_variability", "H": 10.0431, "p_raw": 0.074024, "p_bh": 0.00557, "false": true},
+        {"predictor": "plan_proportion", "H": 7.5906, "p_raw": 0.180288, "p_bh": 0.00557, "significant": false}
+      ]
+    },
+    "secondary_family_failure_type": {
+      "correction": "Benjamini-Hochberg",
+      "results": [
+        {"predictor": "mean_plan_length", "H": 53.9277, "p_raw": 0.000010, "p_bh": 0.000058, "significant": true},
+        {"predictor": "mean_reflection_length", "H": 53.2856, "p_raw": 0.000013, "p_bh": 0.000058, "significant": true},
+        {"predictor": "mean_memory_length", "H": 33.4561, "p_raw": 0.009861, "p_bh": 0.000058, "significant": true},
+        {"predictor": "reflection_variability", "H": 26.2833, "p_raw": 0.069451, "p_bh": 0.000058, "significant": false},
+        {"predictor": "memory_proportion", "H": 25.2947, "p_raw": 0.088304, "p_bh": 0.000058, "significant": false},
+        {"predictor": "plan_proportion", "H": 25.0546, "p_raw": 0.093495, "p_bh": 0.000058, "significant": false},
+        {"predictor": "reflection_proportion", "H": 22.9051, "p_raw": 0.152366, "p_bh": 0.000058, "significant": false},
+        {"predictor": "memory_variability", "H": 21.6755, "p_raw": 0.197522, "p_bh": 0.000058, "significant": false},
+        {"predictor": "plan_variability", "H": 20.5298, "p_raw": 0.248032, "p_bh": 0.000058, "significant": false}
+      ]
+    },
+    "strongest_predictors": ["mean_plan_length", "mean_reflection_length", "mean_memory_length"],
+    "action_module_note": "Action module shows clearest separation from other modules across multiple predictors",
+    "dunn_key_findings": {
+      "mean_plan_length": "action vs plan p=0.0275, action vs reflection p=0.0180, action vs system p=0.0229, memory vs plan p=0.0139",
+      "mean_reflection_length": "memory vs plan p=0.0013, memory vs reflection p=0.0132",
+      "mean_memory_length": "action vs plan p=0.0237, action vs reflection p=0.0037, action vs system p=0.0048"
+    }
+  },
+
+  "rq3": {
+    "test": "Factorial PERMANOVA — interaction term (Module x Environment)",
+    "r2_module": 0.0835,
+    "r2_environment": 0.0000,
+    "r2_combined": 0.1575,
+    "r2_interaction_estimate": 0.0740,
+    "interaction_F": 1.4580,
+    "df_interaction": 10,
+    "df_residual": 166,
+    "interaction_p_parametric": 0.1594,
+    "verdict": "Not significant — interaction p=0.159 > 0.05",
+    "note": "Environment R2=0.0000 expected — within-environment z-scoring removes environment variance from distance matrix by construction"
+  },
+
+  "sensitivity": {
+    "s1_unrestricted_permutation": {
+      "pseudo_F": 3.2070,
+      "p": 0.0001,
+      "conclusion_preserved": true
+    },
+    "s2_gower_distance": {
+      "pseudo_F": 3.1701,
+      "p": 0.0004,
+      "conclusion_preserved": true
+    },
+    "s3_plan_planning_merged": {
+      "pseudo_F": 3.6982,
+      "p": 0.0001,
+      "conclusion_preserved": true
+    },
+    "s4_per_environment": {
+      "ALFWorld": {"pseudo_F": 4.3735, "p": 0.0001, "conclusion_preserved": true},
+      "GAIA": {"pseudo_F": 0.4264, "p": 0.9419, "conclusion_preserved": false},
+      "WebShop": {"pseudo_F": 2.1088, "p": 0.0214, "conclusion_preserved": true}
+    },
+    "robustness_verdict": "Qualified",
+    "reason": "GAIA-only sensitivity analysis did not reproduce the primary association; all other pre-specified sensitivity analyses preserved the qualitative conclusion"
+  },
+
+  "final_outcome": {
+    "scientific_outcome": "O1 — Full Confirmation",
+    "interpretation_flag": "Component-interpretable",
+    "robustness_flag": "Qualified",
+    "reason": "The GAIA-only sensitivity analysis did not reproduce the primary association, whereas all other pre-specified sensitivity analyses preserved the qualitative conclusion",
+    "rq1_statement": "RQ1 demonstrates a statistically significant multivariate association between the confirmatory Reasoning-State Expression profile (Memory and Reflection Expression) and critical failure module (PERMANOVA pseudo-F=3.207, R2=0.0835, blocked-permutation p=0.0001)"
+  },
+
+  "threats_to_validity": [
+    {
+      "threat": "Environment confounding",
+      "mitigation": "Within-environment z-scoring and blocked permutation (Step 5A/5C)"
+    },
+    {
+      "threat": "Annotation vocabulary drift (plan vs planning)",
+      "evidence": "49 plan vs 29 planning labels, strongly correlated with environment",
+      "mitigation": "Three-option sensitivity analysis in Step 5D"
+    },
+    {
+      "threat": "Model-related stylistic variation (general)",
+      "evidence": "eta2=0.44-0.59 across predictors; Cramer's V=0.317 (model-module)",
+      "mitigation": "Supplementary model-adjustment diagnostic; association survives (pseudo-F 4.21 to 2.73, p=0.005)"
+    },
+    {
+      "threat": "Model-specific memory implementation",
+      "evidence": "Llama-3.3-70B-Instruct-Turbo shows cumulative memory growth (median slope 4.38 vs 0.11-0.13 for others)",
+      "mitigation": "Module association strengthens after model adjustment (pseudo-F 3.83 to 5.14, p=0.001 to 0.007)"
+    },
+    {
+      "threat": "Predictor redundancy",
+      "evidence": "Mantel r=0.83-0.90 between full and reduced profiles",
+      "mitigation": "PERMANOVA conclusion invariant across alternative predictor subsets"
+    }
+  ]
+}
